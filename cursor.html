@@ -95,7 +95,7 @@ function begin(){run=true;score=0;level=1;start.classList.add("hide");over.class
 function end(msg){run=false;cancelAnimationFrame(raf);reason.textContent=msg+" You reached level "+level+".";finalEl.textContent=score.toLocaleString();over.classList.remove("hide")}
 function move(){
  let dx=player.tx-player.x,dy=player.ty-player.y,d=Math.hypot(dx,dy);if(d>.1){let s=Math.min(d,12);player.x+=dx/d*s;player.y+=dy/d*s}
- player.x=C(player.x,55,W-55);player.y=C(player.y,105,H-50)
+ player.x=C(player.x,56,W-56);player.y=C(player.y,112,H-42)
 }
 function updateGhosts(dt){
  ghosts.forEach(g=>{g.t=(g.t+dt*g.speed)%2;let t=g.t<=1?g.t:2-g.t;g.x=g.a.x+(g.b.x-g.a.x)*t;g.y=g.a.y+(g.b.y-g.a.y)*t})
