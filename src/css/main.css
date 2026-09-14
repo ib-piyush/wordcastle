@@ -625,6 +625,7 @@ body{
 .start-panel .logo{font-size:clamp(25px,4.5vw,46px)}
 .start-panel .logo.alt{font-size:clamp(21px,3.5vw,36px);margin-top:5px}
 .start-panel .subtitle{margin:12px auto 18px;font-size:20px}
+.desktop-only-note{display:none}
 .briefing-grid{
   display:grid;
   gap:10px;
@@ -762,6 +763,8 @@ button:hover,.game-link:hover{
   .logo{font-size:clamp(20px,8vw,34px)}
   .logo.alt{font-size:clamp(18px,7vw,30px);margin-top:6px}
   .subtitle{margin:8px auto 10px;font-size:16px}
+  .desktop-only-note{display:block;margin:8px 0;color:var(--pink);font-family:"Press Start 2P",monospace;font-size:7px;line-height:1.6;text-shadow:0 0 8px rgba(255,93,162,.65)}
+  #startButton{opacity:.45;cursor:not-allowed}
   .mode-title{margin:10px 0 8px}
   .modes{gap:6px;margin-bottom:10px}
   .mode{padding:9px 6px}

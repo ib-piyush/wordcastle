@@ -5,6 +5,7 @@ const scoreEl=document.getElementById("score"),bestScoreEl=document.getElementBy
 const startScreen=document.getElementById("startScreen"),gameOverScreen=document.getElementById("gameOverScreen");
 const target=document.getElementById("targetIndicator"),statusEl=document.getElementById("typingStatus"),inputPreview=document.getElementById("inputPreview"),castle=document.getElementById("castle"),finalScore=document.getElementById("finalScore"),mobileInput=document.getElementById("mobileInput");
 const powerButtons=[...document.querySelectorAll(".powerup-btn")];
+const desktopOnly=window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints>0;
 
 const words={
  scout:[
@@ -45,6 +46,33 @@ let bestScore=0, bestCombo=0;
 let powerCooldowns={ slow:0, shield:0, burst:0 };
 let powerTimers={ slow:0, shield:0, burst:0 };
 let shieldCharges=0;
+let audioContext=null,musicTimer=null,musicStep=0;
+
+function startAudio(){
+ if(desktopOnly||audioContext)return;
+ audioContext=new (window.AudioContext||window.webkitAudioContext)();
+ audioContext.resume();
+ musicTimer=setInterval(playMusicNote,900);
+ playMusicNote();
+}
+
+function tone(frequency,duration=.08,type="square",volume=.025){
+ if(!audioContext||desktopOnly)return;
+ const now=audioContext.currentTime,oscillator=audioContext.createOscillator(),gain=audioContext.createGain();
+ oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,now);
+ gain.gain.setValueAtTime(volume,now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+ oscillator.connect(gain).connect(audioContext.destination);oscillator.start(now);oscillator.stop(now+duration);
+}
+
+function playMusicNote(){
+ const notes=[110,130.81,164.81,146.83,196,164.81,130.81,98];
+ tone(notes[musicStep++%notes.length],.24,"triangle",.008);
+}
+
+function stopAudio(){
+ if(musicTimer){clearInterval(musicTimer);musicTimer=null}
+ if(audioContext){audioContext.close();audioContext=null}
+}
 
 function buildMobileKeyboard(){
   const rows=[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"],["⌫","CLEAR"]];
@@ -112,6 +140,7 @@ function handleCharacterInput(ch){
     const targetMonster=findManualTarget(next);
 
     if(targetMonster){
+      tone(420,.035,"square",.012);
       inputBuffer=next;
       select(targetMonster);
       render(targetMonster);
@@ -135,6 +164,7 @@ function handleCharacterInput(ch){
   if(!selected)return;
 
   if(ch===selected.word[selected.typed.length]){
+    tone(420,.035,"square",.012);
     selected.typed+=ch;
     inputBuffer=selected.typed;
     render(selected);
@@ -254,6 +284,7 @@ function registerKill(baseGain,m){
 
 function destroy(m){
  if(!monsters.includes(m))return;
+ tone(m.type==="boss"?180:260,.12,"sawtooth",.035);
  const baseGain=m.word.length*15+types[m.type].score+wave*5;
  const gained=registerKill(baseGain,m);
  laser(m);
@@ -308,6 +339,7 @@ function specialBlast(source){
  monsters=monsters.filter(enemy=>!nearby.includes(enemy));
 }
 function laser(m){
+ tone(740,.09,"sawtooth",.025);
  const x=W()/2,y=H()-60,tx=m.x,ty=m.y+35,dx=tx-x,dy=ty-y;
  const line=document.createElement("div"),dist=Math.hypot(dx,dy);
  line.className="laser";line.style.left=x+"px";line.style.top=y+"px";line.style.width=dist+"px";line.style.transform=`rotate(${Math.atan2(dy,dx)*180/Math.PI}deg)`;
@@ -330,7 +362,7 @@ function reached(m){
  if(!monsters.includes(m))return;
  let damage = 1;
  if (shieldCharges > 0) {
-   shieldCharges--; damage = 0; popup(m.x,m.y,"BLOCKED");
+   shieldCharges--; damage = 0; tone(180,.16,"triangle",.035); popup(m.x,m.y,"BLOCKED");
    statusEl.textContent = "SHIELD ABSORBED THE HIT";
  }
  if (damage > 0) {
@@ -403,17 +435,20 @@ function activatePower(power){
   if (!running) return;
   if (powerCooldowns[power] > 0 || powerTimers[power] > 0) return;
   if (power === "slow") {
+    tone(220,.18,"triangle",.04);
     powerTimers.slow = 4.8;
     powerCooldowns.slow = 12;
     statusEl.textContent = "SLOW MODE // ENEMY SPEED CUT";
   }
   if (power === "shield") {
+    tone(330,.18,"triangle",.04);
     powerTimers.shield = 6;
     powerCooldowns.shield = 15;
     shieldCharges = 2;
     statusEl.textContent = "SHIELD UP // 2 BLOCKS READY";
   }
   if (power === "burst") {
+    tone(90,.28,"sawtooth",.05);
     powerTimers.burst = 1.2;
     powerCooldowns.burst = 18;
     const chain = monsters.slice();
@@ -439,6 +474,8 @@ powerButtons.forEach(button => {
 });
 
 function start(){
+ if(desktopOnly)return;
+ startAudio();
  score=0;hp=5;wave=1;monsters=[];selected=null;id=0;last=0;spawn=0;waveTime=0;spawnInterval=1400;inputBuffer="";combo=0;comboTimer=0;lastKillTime=0;bestCombo=0;powerCooldowns={ slow:0, shield:0, burst:0 };powerTimers={ slow:0, shield:0, burst:0 };shieldCharges=0;hud();
  gameArea.querySelectorAll(".monster,.laser,.particle,.popup").forEach(x=>x.remove());
  startScreen.classList.add("hidden");gameOverScreen.classList.add("hidden");running=true;
@@ -451,6 +488,7 @@ function start(){
 
 function endGame(){
  running=false;cancelAnimationFrame(raf);clearTarget();inputBuffer="";inputPreview.textContent="";
+ stopAudio();
  bestScore = Math.max(bestScore, score);
  bestCombo = Math.max(bestCombo, combo);
  syncMobileKeyboard();
