@@ -172,6 +172,11 @@ body{
 .hp{color:var(--green);text-shadow:0 0 10px rgba(124,247,163,0.7)}
 
 .powerups{
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:18;
   flex-shrink:0;
   display:flex;
   align-items:center;
@@ -767,7 +772,6 @@ button:hover,.game-link:hover{
   .label{font-size:6px}
   .value{font-size:8px}
   #gameArea{top:62px}
-  .hud-right{gap:4px}
   #powerups{display:none}
   .powerup-btn{min-width:74px;padding:6px 5px;font-size:6px;letter-spacing:1px}
   .panel{width:min(430px,92vw);padding:16px 12px}

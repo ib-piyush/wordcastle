@@ -13,20 +13,13 @@
 
 <div id="hud">
   <div class="brand"><div class="brand-icon">⚡</div><div><div class="brand-title">SPEED <span>TYPER</span> DEFENSE</div><div class="brand-sub">CASTLE SECURITY SYSTEM</div></div></div>
-  <div class="hud-right">
-    <div class="stats">
-      <div class="card"><div class="label">SCORE</div><div id="score" class="value score">0</div></div>
-      <div class="card"><div class="label">BEST</div><div id="bestScore" class="value score">0</div></div>
-      <div class="card"><div class="label">COMBO</div><div id="combo" class="value combo">x1.0</div></div>
-      <div class="card"><div class="label">WAVE</div><div id="wave" class="value wave">1</div></div>
-      <div class="card"><div class="label">CASTLE HP</div><div id="hp" class="value hp">♥♥♥♥♥</div></div>
-    </div>
-    <div id="powerups" class="powerups" aria-label="Power ups">
-      <span class="powerup-label">POWERS <small>1 / 2 / 3</small></span>
-      <button class="powerup-btn" data-power="slow" data-hotkey="1" type="button" title="Press 1 or F1 to activate Slow">1 SLOW</button>
-      <button class="powerup-btn" data-power="shield" data-hotkey="2" type="button" title="Press 2 or F2 to activate Shield">2 SHIELD</button>
-      <button class="powerup-btn" data-power="burst" data-hotkey="3" type="button" title="Press 3 or F3 to activate Burst">3 BURST</button>
-    </div>
+  <div class="stats">
+    <div class="card"><div class="label">SCORE</div><div id="score" class="value score">0</div></div>
+    <div class="card"><div class="label">BEST</div><div id="bestScore" class="value score">0</div></div>
+    <div class="card"><div class="label">COMBO</div><div id="combo" class="value combo">x1.0</div></div>
+    <div class="card"><div class="label">WAVE</div><div id="wave" class="value wave">1</div></div>
+    <div class="card"><div class="label">CASTLE HP</div><div id="hp" class="value hp">♥♥♥♥♥</div></div>
+  </div>
   </div>
 </div>
 
@@ -34,6 +27,12 @@
   <div id="targetIndicator"><div class="cross"></div><div class="cross v"></div></div>
   <div id="typingStatus">CHOOSE A TARGET AND TYPE ITS WORD</div>
   <div id="inputPreview"></div>
+  <div id="powerups" class="powerups" aria-label="Power ups">
+    <span class="powerup-label">POWERS <small>1 / 2 / 3</small></span>
+    <button class="powerup-btn" data-power="slow" data-hotkey="1" type="button" title="Press 1 or F1 to activate Slow">1 SLOW</button>
+    <button class="powerup-btn" data-power="shield" data-hotkey="2" type="button" title="Press 2 or F2 to activate Shield">2 SHIELD</button>
+    <button class="powerup-btn" data-power="burst" data-hotkey="3" type="button" title="Press 3 or F3 to activate Burst">3 BURST</button>
+  </div>
   <input id="mobileInput" class="mobile-input" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Type the target word">
   <div id="mobileKeyboard" aria-label="On screen keyboard"></div>
 
@@ -64,22 +63,19 @@
     <div class="briefing-grid">
       <section class="briefing-block mode-block">
         <h2>TARGETING MODE</h2>
-        <div class="hud-controls">
-          <div class="stats">
-            <div class="card"><div class="label">SCORE</div><div id="score" class="value score">0</div></div>
-            <div class="card"><div class="label">BEST</div><div id="bestScore" class="value score">0</div></div>
-            <div class="card"><div class="label">COMBO</div><div id="combo" class="value combo">x1.0</div></div>
-            <div class="card"><div class="label">WAVE</div><div id="wave" class="value wave">1</div></div>
-            <div class="card"><div class="label">CASTLE HP</div><div id="hp" class="value hp">♥♥♥♥♥</div></div>
-          </div>
-          <div id="powerups" class="powerups" aria-label="Power ups">
-            <span class="powerup-label">POWERS <small>KEYS</small></span>
-            <button class="powerup-btn" data-power="slow" data-hotkey="1" type="button" title="Press 1 or F1 to activate Slow">1 SLOW</button>
-            <button class="powerup-btn" data-power="shield" data-hotkey="2" type="button" title="Press 2 or F2 to activate Shield">2 SHIELD</button>
-            <button class="powerup-btn" data-power="burst" data-hotkey="3" type="button" title="Press 3 or F3 to activate Burst">3 BURST</button>
-          </div>
+        <div class="modes">
+          <div class="mode selected" data-mode="manual"><b>MANUAL</b><small>TYPE ANY TARGET</small></div>
+          <div class="mode" data-mode="auto"><b>AUTO</b><small>NEAREST THREAT</small></div>
         </div>
+      </section>
+      <section class="briefing-block">
         <h2>HOW TO PLAY</h2>
+        <ol>
+          <li>Type a monster's word in order.</li>
+          <li>Destroy it before it reaches the castle.</li>
+          <li>Keep combos alive for bigger scores.</li>
+        </ol>
+      </section>
       <section class="briefing-block rules-block">
         <h2>RULES</h2>
         <ul>
