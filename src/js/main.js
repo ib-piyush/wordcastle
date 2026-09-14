@@ -44,6 +44,7 @@ let inputBuffer="";
 let combo=0, comboTimer=0, lastKillTime=0;
 let bestScore=0, bestCombo=0;
 let powerCooldowns={ slow:0, shield:0, burst:0 };
+let powerReadyAt={ slow:0, shield:0, burst:0 };
 let powerTimers={ slow:0, shield:0, burst:0 };
 let shieldCharges=0;
 let audioContext=null,musicTimer=null,musicStep=0;
@@ -58,6 +59,7 @@ function startAudio(){
 
 function tone(frequency,duration=.08,type="square",volume=.025){
  if(!audioContext||desktopOnly)return;
+ if(audioContext.state==="suspended")audioContext.resume();
  const now=audioContext.currentTime,oscillator=audioContext.createOscillator(),gain=audioContext.createGain();
  oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,now);
  gain.gain.setValueAtTime(volume,now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
@@ -366,7 +368,7 @@ function reached(m){
    statusEl.textContent = "SHIELD ABSORBED THE HIT";
  }
  if (damage > 0) {
-   tone(105,.2,"sawtooth",.045);
+   tone(82,.28,"sawtooth",.06);
    hp--;hud();castle.classList.remove("hit");void castle.offsetWidth;castle.classList.add("hit");explode(W()/2,H()-60);
  }
  m.el.remove();monsters=monsters.filter(x=>x!==m);
@@ -382,7 +384,7 @@ function waveUpdate(dt){
 
  for (const key of Object.keys(powerTimers)) {
    powerTimers[key] = Math.max(0, powerTimers[key] - dt);
-   powerCooldowns[key] = Math.max(0, powerCooldowns[key] - dt);
+   powerCooldowns[key] = Math.max(0, (powerReadyAt[key] - performance.now()) / 1000);
    if (powerTimers[key] === 0 && key === "slow") {
      statusEl.textContent = "SLOW MODE EXPIRED";
    }
@@ -423,7 +425,7 @@ function updatePowerButtons(){
   powerButtons.forEach(button => {
     const key = button.dataset.power;
     const active = powerTimers[key] > 0;
-    const cooldown = powerCooldowns[key] > 0;
+    const cooldown = performance.now() < powerReadyAt[key];
     button.classList.toggle("ready", !cooldown && !active);
     button.classList.toggle("cooldown", cooldown || active);
     button.disabled = cooldown || active;
@@ -434,17 +436,19 @@ function updatePowerButtons(){
 
 function activatePower(power){
   if (!running) return;
-  if (powerCooldowns[power] > 0 || powerTimers[power] > 0) return;
+  if (performance.now() < powerReadyAt[power] || powerTimers[power] > 0) return;
   if (power === "slow") {
     tone(220,.18,"triangle",.04);
     powerTimers.slow = 4.8;
     powerCooldowns.slow = 12;
+    powerReadyAt.slow = performance.now() + 12000;
     statusEl.textContent = "SLOW MODE // ENEMY SPEED CUT";
   }
   if (power === "shield") {
     tone(330,.18,"triangle",.04);
     powerTimers.shield = 6;
     powerCooldowns.shield = 15;
+    powerReadyAt.shield = performance.now() + 15000;
     shieldCharges = 2;
     statusEl.textContent = "SHIELD UP // 2 BLOCKS READY";
   }
@@ -452,6 +456,7 @@ function activatePower(power){
     tone(90,.28,"sawtooth",.05);
     powerTimers.burst = 1.2;
     powerCooldowns.burst = 18;
+    powerReadyAt.burst = performance.now() + 18000;
     const chain = monsters.slice();
     chain.forEach(enemy => {
       if (enemy && enemy.el && enemy.el.isConnected) {
@@ -477,7 +482,7 @@ powerButtons.forEach(button => {
 function start(){
  if(desktopOnly)return;
  startAudio();
- score=0;hp=5;wave=1;monsters=[];selected=null;id=0;last=0;spawn=0;waveTime=0;spawnInterval=1400;inputBuffer="";combo=0;comboTimer=0;lastKillTime=0;bestCombo=0;powerCooldowns={ slow:0, shield:0, burst:0 };powerTimers={ slow:0, shield:0, burst:0 };shieldCharges=0;hud();
+ score=0;hp=5;wave=1;monsters=[];selected=null;id=0;last=0;spawn=0;waveTime=0;spawnInterval=1400;inputBuffer="";combo=0;comboTimer=0;lastKillTime=0;bestCombo=0;powerCooldowns={ slow:0, shield:0, burst:0 };powerReadyAt={ slow:0, shield:0, burst:0 };powerTimers={ slow:0, shield:0, burst:0 };shieldCharges=0;hud();
  gameArea.querySelectorAll(".monster,.laser,.particle,.popup").forEach(x=>x.remove());
  startScreen.classList.add("hidden");gameOverScreen.classList.add("hidden");running=true;
  inputPreview.textContent="";
@@ -492,7 +497,8 @@ function endGame(){
  tone(196,.18,"square",.04);
  setTimeout(()=>tone(146.83,.22,"square",.035),150);
  setTimeout(()=>tone(110,.4,"triangle",.03),330);
- setTimeout(stopAudio,850);
+ const endedAudio=audioContext;
+ setTimeout(()=>{if(audioContext===endedAudio)stopAudio()},850);
  bestScore = Math.max(bestScore, score);
  bestCombo = Math.max(bestCombo, combo);
  syncMobileKeyboard();
