@@ -3,7 +3,7 @@
 const gameArea=document.getElementById("gameArea");
 const scoreEl=document.getElementById("score"),bestScoreEl=document.getElementById("bestScore"),comboEl=document.getElementById("combo"),waveEl=document.getElementById("wave"),hpEl=document.getElementById("hp");
 const startScreen=document.getElementById("startScreen"),gameOverScreen=document.getElementById("gameOverScreen");
-const target=document.getElementById("targetIndicator"),statusEl=document.getElementById("typingStatus"),inputPreview=document.getElementById("inputPreview"),castle=document.getElementById("castle"),finalScore=document.getElementById("finalScore");
+const target=document.getElementById("targetIndicator"),statusEl=document.getElementById("typingStatus"),inputPreview=document.getElementById("inputPreview"),castle=document.getElementById("castle"),finalScore=document.getElementById("finalScore"),mobileInput=document.getElementById("mobileInput");
 const powerButtons=[...document.querySelectorAll(".powerup-btn")];
 
 const words={
@@ -68,10 +68,25 @@ function buildMobileKeyboard(){
 }
 
 function syncMobileKeyboard(){
-  if(!keyboardEl)return;
-  const show=mobileInputEnabled() && running;
-  keyboardEl.classList.toggle("visible", show);
+  if(keyboardEl)keyboardEl.classList.remove("visible");
+  if(running && mobileInputEnabled()){
+    mobileInput.value=inputBuffer;
+    mobileInput.focus({preventScroll:true});
+  }else{
+    mobileInput.blur();
+  }
 }
+
+mobileInput.addEventListener("input",()=>{
+  if(!running)return;
+  const value=mobileInput.value.toLowerCase().replace(/[^a-z]/g,"");
+  if(value.length < inputBuffer.length){
+    handleBackspace();
+  }else if(value.length > inputBuffer.length){
+    for(const ch of value.slice(inputBuffer.length))handleCharacterInput(ch);
+  }
+  mobileInput.value=inputBuffer;
+});
 
 function handleBackspace(){
   if(!running)return;
@@ -81,6 +96,9 @@ function handleBackspace(){
     const m=findManualTarget(inputBuffer);
     if(m)select(m);
     else if(inputBuffer==="")clearTarget();
+  }else if(selected){
+    selected.typed=inputBuffer;
+    render(selected);
   }
 }
 
@@ -99,6 +117,7 @@ function handleCharacterInput(ch){
       if(inputBuffer===targetMonster.word){
         inputBuffer="";
         inputPreview.textContent="";
+        mobileInput.value="";
         destroy(targetMonster);
       }
     }else{
@@ -115,8 +134,13 @@ function handleCharacterInput(ch){
 
   if(ch===selected.word[selected.typed.length]){
     selected.typed+=ch;
+    inputBuffer=selected.typed;
     render(selected);
-    if(selected.typed.length===selected.word.length)destroy(selected);
+    if(selected.typed.length===selected.word.length){
+      inputBuffer="";
+      mobileInput.value="";
+      destroy(selected);
+    }
   }else{
     selected.el.classList.remove("hit");void selected.el.offsetWidth;selected.el.classList.add("hit");
   }

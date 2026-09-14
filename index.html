@@ -32,6 +32,7 @@
   <div id="targetIndicator"><div class="cross"></div><div class="cross v"></div></div>
   <div id="typingStatus">CHOOSE A TARGET AND TYPE ITS WORD</div>
   <div id="inputPreview"></div>
+  <input id="mobileInput" class="mobile-input" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Type the target word">
   <div id="mobileKeyboard" aria-label="On screen keyboard"></div>
 
   <div id="castle">
@@ -42,10 +43,11 @@
 </div>
 
 <div id="startScreen" class="screen">
-  <div class="panel">
+  <div class="panel start-panel">
+    <div class="briefing-label">CASTLE SECURITY // TYPOGRAPHY PROTOCOL</div>
     <div class="logo">SPEED TYPER</div>
     <div class="logo alt">DEFENSE</div>
-    <p class="subtitle">Choose how you want to target enemies. In Manual mode, simply start typing the word of any monster you want to attack.</p>
+    <p class="subtitle">Defend the castle by typing the words carried by incoming monsters.</p>
 
     <div class="mode-title">TARGETING MODE</div>
     <div class="modes">
@@ -58,6 +60,25 @@
       <div class="instruction"><strong class="yellow">SOLDIER</strong><small>5 LETTERS · MEDIUM</small></div>
       <div class="instruction"><strong class="pink">BOSS</strong><small>7+ LETTERS · HEAVY</small></div>
       <div class="instruction"><strong style="color:#c77dff">SPECIAL</strong><small>TOUGH WORD · AREA BLAST</small></div>
+    </div>
+
+    <div class="briefing-grid">
+      <section class="briefing-block">
+        <h2>HOW TO PLAY</h2>
+        <ol>
+          <li>Choose <b>Manual</b> to attack any visible word, or <b>Auto</b> for the nearest threat.</li>
+          <li>Type the letters in order. Finish the word before the monster reaches the castle.</li>
+          <li>Build a combo for bigger scores and use powers when the wave gets crowded.</li>
+        </ol>
+      </section>
+      <section class="briefing-block rules-block">
+        <h2>RULES</h2>
+        <ul>
+          <li>Every breach costs <b>1 castle HP</b>.</li>
+          <li>Longer words and tougher enemies award more points.</li>
+          <li>Special enemies trigger an area blast when destroyed.</li>
+        </ul>
+      </section>
     </div>
     <button id="startButton">START DEFENSE</button>
   </div>
