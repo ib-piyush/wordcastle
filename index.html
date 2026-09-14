@@ -25,6 +25,7 @@ body{font-family:"Courier New",monospace;background:#020308;color:#fff;overflow:
 .particle{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--cyan);z-index:15}.popup{position:absolute;color:var(--yellow);font-weight:bold;font-size:18px;z-index:20;pointer-events:none;text-shadow:0 0 9px var(--yellow);animation:float .8s forwards}@keyframes float{to{opacity:0;transform:translateY(-45px)}}
 #typingStatus{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);padding:8px 15px;border:1px solid #202938;background:#050811dd;color:#566;z-index:12;font-size:11px;letter-spacing:1px;white-space:nowrap}.active{color:var(--cyan)!important;border-color:#00f5ff55!important;text-shadow:0 0 8px var(--cyan)}
 #inputPreview{position:absolute;left:50%;bottom:88px;transform:translateX(-50%);z-index:12;color:#39ff88;font-size:13px;letter-spacing:3px;min-height:16px;text-shadow:0 0 8px #39ff88;pointer-events:none}
+#mobileKeyboard{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:25;display:none;width:min(92vw,520px);padding:10px;border:1px solid #1d2c3c;background:rgba(7,12,18,.9);backdrop-filter:blur(8px);box-shadow:0 0 18px rgba(0,245,255,.14)}#mobileKeyboard.visible{display:block}.keyboard-row{display:flex;gap:6px;justify-content:center;margin:4px 0}.keyboard-key{flex:1;max-width:42px;height:38px;border:1px solid #2c3a4d;background:#0b1220;color:#dfeaff;font:inherit;font-size:12px;letter-spacing:1px;cursor:pointer}.keyboard-key.action{max-width:90px;background:#112335}.keyboard-key:active{transform:translateY(1px);background:#00f5ff;color:#03050a}
 @keyframes hit{25%{transform:translateX(calc(-50% - 9px));filter:brightness(2)}75%{transform:translateX(calc(-50% + 9px));filter:brightness(2)}}.hit{animation:hit .3s}
 .screen{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#07192588,#020308f5 65%)}.hidden{display:none}.panel{width:min(680px,92vw);padding:44px;border:1px solid #00f5ff77;background:linear-gradient(145deg,#0a101bd9,#03050bd9);box-shadow:0 0 45px #00f5ff18;text-align:center}.logo{font-size:clamp(34px,7vw,62px);font-weight:bold;line-height:.95;color:var(--cyan);text-shadow:0 0 8px var(--cyan),0 0 30px #00f5ff66}.logo.alt{color:var(--pink);text-shadow:0 0 8px var(--pink);font-size:clamp(28px,5vw,44px);margin-top:8px}.subtitle{color:#8992a4;line-height:1.8;margin:22px auto;max-width:530px;font-size:13px}
 .mode-title{font-size:10px;color:#667;letter-spacing:3px;margin:25px 0 10px}.modes{display:flex;gap:8px;justify-content:center;margin-bottom:25px}.mode{padding:12px 18px;border:1px solid #283243;background:#080c15;color:#788;cursor:pointer;font:inherit;font-size:11px;letter-spacing:1px}.mode.selected{border-color:var(--cyan);color:var(--cyan);background:#00f5ff12;box-shadow:0 0 15px #00f5ff18}.mode b{display:block;color:inherit;font-size:12px;margin-bottom:5px}.mode small{font-size:8px;color:#586273}
@@ -50,6 +51,7 @@ body{font-family:"Courier New",monospace;background:#020308;color:#fff;overflow:
   <div id="targetIndicator"><div class="cross"></div><div class="cross v"></div></div>
   <div id="typingStatus">CHOOSE A TARGET AND TYPE ITS WORD</div>
   <div id="inputPreview"></div>
+  <div id="mobileKeyboard" aria-label="On screen keyboard"></div>
 
   <div id="castle">
     <div class="tower l"></div><div class="tower r"></div>
@@ -77,7 +79,6 @@ body{font-family:"Courier New",monospace;background:#020308;color:#fff;overflow:
       <div class="instruction"><strong style="color:#c77dff">SPECIAL</strong><small>TOUGH WORD · AREA BLAST</small></div>
     </div>
     <button id="startButton">START DEFENSE</button>
-    <a class="game-link" href="cursor.html">PLAY CURSOR RUN</a>
   </div>
 </div>
 
@@ -106,10 +107,88 @@ const words={
  special:["cataclysm","annihilator","thunderstrike","obliteration","electromagnetic","devastation","counterattack","overwhelming"]
 };
 const types={scout:{speed:52,hp:1,score:30},soldier:{speed:31,hp:2,score:65},boss:{speed:17,hp:4,score:120},special:{speed:21,hp:3,score:300}};
+const keyboardEl=document.getElementById("mobileKeyboard");
+const mobileInputEnabled=()=>window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints>0;
 
 let score=0,hp=5,wave=1,running=false,monsters=[],selected=null,id=0,last=0,spawn=0,waveTime=0,spawnInterval=1400,raf;
 let targetingMode="manual";
 let inputBuffer="";
+
+function buildMobileKeyboard(){
+  const rows=[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"],["⌫","CLEAR"]];
+  keyboardEl.innerHTML="";
+  rows.forEach((row,index)=>{
+    const rowEl=document.createElement("div");rowEl.className="keyboard-row";
+    row.forEach(key=>{
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="keyboard-key" + (key==="⌫"||key==="CLEAR" ? " action" : "");
+      btn.textContent=key;
+      btn.addEventListener("click",()=>{
+        if(key==="⌫")return handleBackspace();
+        if(key==="CLEAR"){inputBuffer="";inputPreview.textContent="";clearTarget();statusEl.textContent="TARGET CLEARED";statusEl.classList.remove("active");return;}
+        handleCharacterInput(key.toLowerCase());
+      });
+      rowEl.appendChild(btn);
+    });
+    keyboardEl.appendChild(rowEl);
+  });
+}
+
+function syncMobileKeyboard(){
+  if(!keyboardEl)return;
+  const show=mobileInputEnabled() && running;
+  keyboardEl.classList.toggle("visible", show);
+}
+
+function handleBackspace(){
+  if(!running)return;
+  inputBuffer=inputBuffer.slice(0,-1);
+  inputPreview.textContent=inputBuffer.toUpperCase();
+  if(targetingMode==="manual"){
+    const m=findManualTarget(inputBuffer);
+    if(m)select(m);
+    else if(inputBuffer==="")clearTarget();
+  }
+}
+
+function handleCharacterInput(ch){
+  if(!running||!/^[a-z]$/.test(ch))return;
+
+  if(targetingMode==="manual"){
+    const next=inputBuffer+ch;
+    const targetMonster=findManualTarget(next);
+
+    if(targetMonster){
+      inputBuffer=next;
+      select(targetMonster);
+      render(targetMonster);
+
+      if(inputBuffer===targetMonster.word){
+        inputBuffer="";
+        inputPreview.textContent="";
+        destroy(targetMonster);
+      }
+    }else{
+      inputPreview.textContent=(inputBuffer + ch).toUpperCase();
+      statusEl.textContent="NO MATCH // TYPE A VISIBLE WORD";
+      statusEl.classList.remove("active");
+      gameArea.animate([{filter:"brightness(1)"},{filter:"brightness(1.35)"},{filter:"brightness(1)"}],{duration:100});
+    }
+    return;
+  }
+
+  if(!selected)bestTarget();
+  if(!selected)return;
+
+  if(ch===selected.word[selected.typed.length]){
+    selected.typed+=ch;
+    render(selected);
+    if(selected.typed.length===selected.word.length)destroy(selected);
+  }else{
+    selected.el.classList.remove("hit");void selected.el.offsetWidth;selected.el.classList.add("hit");
+  }
+}
 
 const rnd=(a,b)=>Math.random()*(b-a)+a;
 const W=()=>gameArea.clientWidth,H=()=>gameArea.clientHeight;
@@ -188,57 +267,11 @@ function findManualTarget(buffer){
 document.addEventListener("keydown",e=>{
  if(!running||e.ctrlKey||e.altKey||e.metaKey)return;
  if(e.key==="Backspace"){
-   inputBuffer=inputBuffer.slice(0,-1);
-   inputPreview.textContent=inputBuffer.toUpperCase();
-   if(targetingMode==="manual"){
-     const m=findManualTarget(inputBuffer);
-     if(m)select(m);
-     else if(inputBuffer==="")clearTarget();
-   }
+   handleBackspace();
    return;
  }
  if(!/^[a-zA-Z]$/.test(e.key))return;
-
- const ch=e.key.toLowerCase();
-
- if(targetingMode==="manual"){
-   const next=inputBuffer+ch;
-   const targetMonster=findManualTarget(next);
-
-   if(targetMonster){
-     inputBuffer=next;
-     select(targetMonster);
-     render(targetMonster);
-
-     if(inputBuffer===targetMonster.word){
-       inputBuffer="";
-       inputPreview.textContent="";
-       destroy(targetMonster);
-     }
-   }else{
-     /*
-      If the current typed sequence doesn't match anything,
-      give visual feedback but don't destroy or change targets.
-     */
-     inputPreview.textContent=(inputBuffer+ch).toUpperCase();
-     statusEl.textContent="NO MATCH // TYPE A VISIBLE WORD";
-     statusEl.classList.remove("active");
-     gameArea.animate([{filter:"brightness(1)"},{filter:"brightness(1.35)"},{filter:"brightness(1)"}],{duration:100});
-   }
-   return;
- }
-
- /* Auto mode retains the classic selected-target behavior. */
- if(!selected)bestTarget();
- if(!selected)return;
-
- if(ch===selected.word[selected.typed.length]){
-   selected.typed+=ch;
-   render(selected);
-   if(selected.typed.length===selected.word.length)destroy(selected);
- }else{
-   selected.el.classList.remove("hit");void selected.el.offsetWidth;selected.el.classList.add("hit");
- }
+ handleCharacterInput(e.key.toLowerCase());
 });
 
 function destroy(m){
@@ -361,11 +394,13 @@ function start(){
  inputPreview.textContent="";
  statusEl.textContent=targetingMode==="manual"?"TYPE ANY VISIBLE WORD TO TARGET IT":"AUTO TARGET ENABLED // TYPE THE HIGHLIGHTED WORD";
  statusEl.classList.add("active");
+ syncMobileKeyboard();
  setTimeout(()=>running&&createMonster(),500);raf=requestAnimationFrame(loop);
 }
 
 function endGame(){
  running=false;cancelAnimationFrame(raf);clearTarget();inputBuffer="";inputPreview.textContent="";
+ syncMobileKeyboard();
  statusEl.textContent="SYSTEM OFFLINE";finalScore.textContent=score.toLocaleString();gameOverScreen.classList.remove("hidden");
 }
 
@@ -388,7 +423,11 @@ gameArea.addEventListener("click",e=>{
 
 window.addEventListener("resize",()=>{
  for(const m of monsters){m.x=Math.max(70,Math.min(W()-70,m.x));render(m)}
+ syncMobileKeyboard();
 });
+
+buildMobileKeyboard();
+syncMobileKeyboard();
 hud();
 </script>
 </body>
