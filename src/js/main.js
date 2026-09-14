@@ -366,6 +366,7 @@ function reached(m){
    statusEl.textContent = "SHIELD ABSORBED THE HIT";
  }
  if (damage > 0) {
+   tone(105,.2,"sawtooth",.045);
    hp--;hud();castle.classList.remove("hit");void castle.offsetWidth;castle.classList.add("hit");explode(W()/2,H()-60);
  }
  m.el.remove();monsters=monsters.filter(x=>x!==m);
@@ -488,7 +489,10 @@ function start(){
 
 function endGame(){
  running=false;cancelAnimationFrame(raf);clearTarget();inputBuffer="";inputPreview.textContent="";
- stopAudio();
+ tone(196,.18,"square",.04);
+ setTimeout(()=>tone(146.83,.22,"square",.035),150);
+ setTimeout(()=>tone(110,.4,"triangle",.03),330);
+ setTimeout(stopAudio,850);
  bestScore = Math.max(bestScore, score);
  bestCombo = Math.max(bestCombo, combo);
  syncMobileKeyboard();
