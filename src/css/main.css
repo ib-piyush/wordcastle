@@ -588,7 +588,7 @@ body{
 .screen{
   position:absolute;inset:0;z-index:60;
   display:flex;align-items:center;justify-content:center;
-  overflow:auto;
+  overflow:hidden;
   padding:12px;
   background:radial-gradient(circle at center, rgba(16,25,35,0.78), rgba(4,6,10,0.95) 68%);
 }
@@ -602,12 +602,13 @@ body{
   text-align:center;
 }
 .start-panel{
-  width:min(900px,96vw);
+  width:min(980px,96vw);
+  height:min(570px,calc(100vh - 24px));
   margin:0;
-  padding:22px 24px;
+  padding:24px 28px;
   display:grid;
-  grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);
-  gap:22px;
+  grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);
+  gap:28px;
   align-items:center;
 }
 .landing-main{text-align:center}
@@ -620,7 +621,7 @@ body{
 }
 .start-panel .logo{font-size:clamp(25px,4.5vw,46px)}
 .start-panel .logo.alt{font-size:clamp(21px,3.5vw,36px);margin-top:5px}
-.start-panel .subtitle{margin:12px auto 16px;font-size:20px}
+.start-panel .subtitle{margin:12px auto 18px;font-size:20px}
 .briefing-grid{
   display:grid;
   gap:10px;
@@ -640,10 +641,13 @@ body{
   letter-spacing:1px;
 }
 .briefing-block ol,.briefing-block ul{padding-left:18px;color:#a8bfd1;font-size:17px;line-height:1.05}
-.briefing-block li{margin:5px 0;padding-left:2px}
+.briefing-block li{margin:4px 0;padding-left:2px}
 .briefing-block b{color:#f0fbff}
 .rules-block h2{color:var(--yellow)}
 .start-panel #startButton{width:100%;margin-top:2px}
+.mode-block .modes{margin:0}
+.mode-block .mode{padding:11px 8px}
+.mode-block .mode b{font-size:8px}
 .logo{
   font-family:"Press Start 2P",monospace;
   font-size:clamp(26px,5vw,54px);
@@ -749,13 +753,13 @@ button:hover,.game-link:hover{
   #gameArea{top:62px}
   #powerups{display:none}
   .panel{width:min(430px,92vw);padding:16px 12px}
-  .start-panel{display:block;margin:8px 0;padding:16px 12px}
+  .start-panel{display:block;width:min(430px,94vw);height:calc(100vh - 16px);margin:8px 0;padding:14px 12px;overflow:hidden}
   .briefing-label{font-size:5px;letter-spacing:1px;margin-bottom:7px}
   .logo{font-size:clamp(20px,8vw,34px)}
   .logo.alt{font-size:clamp(18px,7vw,30px);margin-top:6px}
-  .subtitle{margin:12px auto;font-size:17px}
-  .mode-title{margin:14px 0 8px}
-  .modes{gap:6px;margin-bottom:12px}
+  .subtitle{margin:8px auto 10px;font-size:16px}
+  .mode-title{margin:10px 0 8px}
+  .modes{gap:6px;margin-bottom:10px}
   .mode{padding:9px 6px}
   .mode b{font-size:7px}
   .mode small{font-size:9px}
@@ -763,8 +767,8 @@ button:hover,.game-link:hover{
   .instruction{padding:8px 4px}
   .instruction strong{font-size:9px;margin-bottom:4px}
   .instruction small{font-size:8px}
-  .briefing-grid{grid-template-columns:1fr;gap:6px;margin:10px 0 14px}
-  .briefing-block{padding:9px 11px}
+  .briefing-grid{grid-template-columns:1fr;gap:6px;margin:8px 0 10px}
+  .briefing-block{padding:8px 10px}
   .briefing-block h2{font-size:7px;margin-bottom:5px}
   .briefing-block ol,.briefing-block ul{font-size:14px;line-height:1.02}
   .briefing-block li{margin:3px 0}
