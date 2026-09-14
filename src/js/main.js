@@ -1,15 +1,37 @@
 "use strict";
 
 const gameArea=document.getElementById("gameArea");
-const scoreEl=document.getElementById("score"),waveEl=document.getElementById("wave"),hpEl=document.getElementById("hp");
+const scoreEl=document.getElementById("score"),bestScoreEl=document.getElementById("bestScore"),comboEl=document.getElementById("combo"),waveEl=document.getElementById("wave"),hpEl=document.getElementById("hp");
 const startScreen=document.getElementById("startScreen"),gameOverScreen=document.getElementById("gameOverScreen");
 const target=document.getElementById("targetIndicator"),statusEl=document.getElementById("typingStatus"),inputPreview=document.getElementById("inputPreview"),castle=document.getElementById("castle"),finalScore=document.getElementById("finalScore");
+const powerButtons=[...document.querySelectorAll(".powerup-btn")];
 
 const words={
- scout:["sun","red","run","zap","fox","jet","ice","arc","bit","war","ram","sky","orb","hit"],
- soldier:["flame","storm","sword","laser","guard","metal","power","speed","armor","enemy","tower","arrow","blaze","force"],
- boss:["destroy","invasion","warrior","firewall","monster","defense","guardian","commander","thunder","overload","stronghold","nightmare","battlefield","protector"],
- special:["cataclysm","annihilator","thunderstrike","obliteration","electromagnetic","devastation","counterattack","overwhelming"]
+ scout:[
+  "sun","red","run","zap","fox","jet","ice","arc","bit","war","ram","sky","orb","hit","dash","bolt",
+  "glow","nova","rift","peak","bloom","drift","vibe","spark","pulse","phase","glade","frost","crown",
+  "tide","flare","lunar","ember","drone","ghost","cinder","brisk","rune","blink","haze","sprint"
+ ],
+ soldier:[
+  "flame","storm","sword","laser","guard","metal","power","speed","armor","enemy","tower","arrow","blaze",
+  "force","shield","signal","ember","swift","vortex","helmet","rocket","cannon","mecha","terrain","impact",
+  "threat","harbor","drill","sentinel","fusion","hollow","charge","signal","thunder","quartz","ranger","crystal",
+  "barricade","breaker","bastion","fury","turret","voltage","bloom","horizon","cobalt","magnet"
+ ],
+ boss:[
+  "destroy","invasion","warrior","firewall","monster","defense","guardian","commander","thunder","overload",
+  "stronghold","nightmare","battlefield","protector","apocalypse","execution","catapult","rampart","fortress",
+  "oblivion","vengeance","suppress","barrage","massacre","absolute","relics","onslaught","behemoth","ravager",
+  "dominion","vanguard","malignant","frontier","sentinel","cyclone","aftershock","titanium","emberfall","shadowfire",
+  "horizonbreak","eclipse","reclaimer","ironclad","intercept","warlord","incursion","supremacy","dreadnought"
+ ],
+ special:[
+  "cataclysm","annihilator","thunderstrike","obliteration","electromagnetic","devastation","counterattack",
+  "overwhelming","astralflare","blackout","meteorstorm","voidbreaker","starforge","supersonic","planetfall",
+  "draconis","quantumflux","retribution","inferno","disruption","hurricane","punishment","magnifier","combustion",
+  "resonance","paradox","severance","tempest","hollowcore","skybreaker","dreadstorm","vortexcore","crimsonwave",
+  "ultima","neutron","cascade","overdrive","fusionburst","godbreaker","legendary"
+ ]
 };
 const types={scout:{speed:52,hp:1,score:30},soldier:{speed:31,hp:2,score:65},boss:{speed:17,hp:4,score:120},special:{speed:21,hp:3,score:300}};
 const keyboardEl=document.getElementById("mobileKeyboard");
@@ -18,6 +40,11 @@ const mobileInputEnabled=()=>window.matchMedia("(pointer: coarse)").matches || n
 let score=0,hp=5,wave=1,running=false,monsters=[],selected=null,id=0,last=0,spawn=0,waveTime=0,spawnInterval=1400,raf;
 let targetingMode="manual";
 let inputBuffer="";
+let combo=0, comboTimer=0, lastKillTime=0;
+let bestScore=0, bestCombo=0;
+let powerCooldowns={ slow:0, shield:0, burst:0 };
+let powerTimers={ slow:0, shield:0, burst:0 };
+let shieldCharges=0;
 
 function buildMobileKeyboard(){
   const rows=[["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["Z","X","C","V","B","N","M"],["⌫","CLEAR"]];
@@ -99,9 +126,14 @@ const rnd=(a,b)=>Math.random()*(b-a)+a;
 const W=()=>gameArea.clientWidth,H=()=>gameArea.clientHeight;
 
 function hud(){
- scoreEl.textContent=score.toLocaleString();waveEl.textContent=wave;
+ scoreEl.textContent=score.toLocaleString();
+ bestScoreEl.textContent=bestScore.toLocaleString();
+ const comboMultiplier = combo > 0 ? (1 + combo * 0.25).toFixed(1) : "1.0";
+ comboEl.textContent = `x${comboMultiplier}`;
+ waveEl.textContent=wave;
  hpEl.textContent="♥".repeat(hp)+"♡".repeat(5-hp);
  hpEl.style.color=hp<=2?"#ff3b81":hp<=3?"#ffe600":"#39ff88";
+ updatePowerButtons();
 }
 
 function chooseType(){
@@ -120,7 +152,8 @@ function createMonster(){
  const health=document.createElement("div");health.className="health";
  const fill=document.createElement("div");fill.className="health-fill";health.appendChild(fill);
  el.append(wordEl,body,health);
- const m={id:++id,type,word,typed:"",x:rnd(80,Math.max(90,W()-80)),y:-100,speed:cfg.speed+wave*.7,hp:cfg.hp,maxHp:cfg.hp,el,wordEl,fill};
+ const difficultyBoost = 1 + (wave - 1) * 0.18 + Math.min(monsters.length * 0.05, 1.1);
+ const m={id:++id,type,word,typed:"",x:rnd(80,Math.max(90,W()-80)),y:-100,speed:(cfg.speed+wave*.35)*difficultyBoost,hp:cfg.hp,maxHp:cfg.hp,el,wordEl,fill};
  el.style.left=m.x+"px";el.style.top=m.y+"px";gameArea.appendChild(el);monsters.push(m);render(m);
  if(targetingMode==="auto"&&!selected)bestTarget();
 }
@@ -168,10 +201,29 @@ document.addEventListener("keydown",e=>{
  handleCharacterInput(e.key.toLowerCase());
 });
 
+function getComboMultiplier(){
+  return combo > 0 ? 1 + combo * 0.25 : 1;
+}
+
+function registerKill(baseGain,m){
+  const now=performance.now();
+  if(now-lastKillTime<2200) combo += 1; else combo = 1;
+  lastKillTime=now;
+  comboTimer=2.4;
+  const multiplier=getComboMultiplier();
+  const gained=Math.round(baseGain * multiplier);
+  score += gained;
+  if(combo > 1){
+    popup(m.x,m.y,`COMBO x${multiplier.toFixed(1)}`);
+  }
+  hud();
+  return gained;
+}
+
 function destroy(m){
  if(!monsters.includes(m))return;
- const gained=m.word.length*15+types[m.type].score+wave*5;
- score+=gained;
+ const baseGain=m.word.length*15+types[m.type].score+wave*5;
+ const gained=registerKill(baseGain,m);
  laser(m);
  explode(m.x,m.y+35);
  popup(m.x,m.y,`+${gained}`);
@@ -244,7 +296,14 @@ function popup(x,y,text){
 
 function reached(m){
  if(!monsters.includes(m))return;
- hp--;hud();castle.classList.remove("hit");void castle.offsetWidth;castle.classList.add("hit");explode(W()/2,H()-60);
+ let damage = 1;
+ if (shieldCharges > 0) {
+   shieldCharges--; damage = 0; popup(m.x,m.y,"BLOCKED");
+   statusEl.textContent = "SHIELD ABSORBED THE HIT";
+ }
+ if (damage > 0) {
+   hp--;hud();castle.classList.remove("hit");void castle.offsetWidth;castle.classList.add("hit");explode(W()/2,H()-60);
+ }
  m.el.remove();monsters=monsters.filter(x=>x!==m);
  if(selected===m){clearTarget();if(targetingMode==="auto")bestTarget()}
  if(hp<=0)endGame();
@@ -252,7 +311,19 @@ function reached(m){
 
 function waveUpdate(dt){
  waveTime+=dt;
- if(waveTime>=20000){waveTime=0;wave++;spawnInterval=Math.max(500,1400-(wave-1)*90);hud();announceWave()}
+ comboTimer = Math.max(0, comboTimer - dt);
+ if(comboTimer === 0 && combo > 0){ combo = 0; }
+ if(waveTime>=20000){waveTime=0;wave++;spawnInterval=Math.max(620,1400-(wave-1)*60);hud();announceWave()}
+
+ for (const key of Object.keys(powerTimers)) {
+   powerTimers[key] = Math.max(0, powerTimers[key] - dt);
+   powerCooldowns[key] = Math.max(0, powerCooldowns[key] - dt);
+   if (powerTimers[key] === 0 && key === "slow") {
+     statusEl.textContent = "SLOW MODE EXPIRED";
+   }
+ }
+ if (powerTimers.shield === 0) shieldCharges = 0;
+ hud();
 }
 
 function announceWave(){
@@ -266,12 +337,15 @@ function loop(t){
  if(!running)return;
  if(!last)last=t;
  const dt=Math.min((t-last)/1000,.05);last=t;spawn+=dt*1000;
- if(spawn>=spawnInterval){
+ const slowFactor = powerTimers.slow > 0 ? 0.58 : 1;
+ const dynamicSpawn = Math.max(520, spawnInterval - wave * 18 - Math.min(score / 180, 180));
+ if(spawn>=dynamicSpawn){
   spawn=0;createMonster();
-  if(wave>=4&&Math.random()<.15)setTimeout(()=>running&&createMonster(),250);
+  if(wave>=3&&Math.random()<0.12+wave*0.02) setTimeout(()=>running&&createMonster(),180);
  }
  for(const m of [...monsters]){
-  m.y+=m.speed*dt;render(m);
+  m.y += m.speed * dt * slowFactor;
+  render(m);
   if(m.y>=H()-105)reached(m);
  }
  if(selected&&monsters.includes(selected)){
@@ -280,8 +354,59 @@ function loop(t){
  waveUpdate(dt);raf=requestAnimationFrame(loop);
 }
 
+function updatePowerButtons(){
+  powerButtons.forEach(button => {
+    const key = button.dataset.power;
+    const active = powerTimers[key] > 0;
+    const cooldown = powerCooldowns[key] > 0;
+    button.classList.toggle("ready", !cooldown && !active);
+    button.classList.toggle("cooldown", cooldown || active);
+    button.disabled = cooldown || active;
+    button.textContent = active ? `${key.toUpperCase()} ON` : cooldown ? `${key.toUpperCase()} ${powerCooldowns[key].toFixed(1)}s` : key.toUpperCase();
+  });
+}
+
+function activatePower(power){
+  if (!running) return;
+  if (powerCooldowns[power] > 0 || powerTimers[power] > 0) return;
+  if (power === "slow") {
+    powerTimers.slow = 4.8;
+    powerCooldowns.slow = 12;
+    statusEl.textContent = "SLOW MODE // ENEMY SPEED CUT";
+  }
+  if (power === "shield") {
+    powerTimers.shield = 6;
+    powerCooldowns.shield = 15;
+    shieldCharges = 2;
+    statusEl.textContent = "SHIELD UP // 2 BLOCKS READY";
+  }
+  if (power === "burst") {
+    powerTimers.burst = 1.2;
+    powerCooldowns.burst = 18;
+    const chain = monsters.slice();
+    chain.forEach(enemy => {
+      if (enemy && enemy.el && enemy.el.isConnected) {
+        score += Math.round((enemy.word.length * 18) + wave * 6);
+        enemy.el.remove();
+        explode(enemy.x, enemy.y + 35);
+      }
+    });
+    monsters = [];
+    selected = null;
+    inputBuffer = "";
+    inputPreview.textContent = "";
+    statusEl.textContent = "BURST // FIELD CLEARED";
+    hud();
+  }
+  hud();
+}
+
+powerButtons.forEach(button => {
+  button.addEventListener("click", () => activatePower(button.dataset.power));
+});
+
 function start(){
- score=0;hp=5;wave=1;monsters=[];selected=null;id=0;last=0;spawn=0;waveTime=0;spawnInterval=1400;inputBuffer="";hud();
+ score=0;hp=5;wave=1;monsters=[];selected=null;id=0;last=0;spawn=0;waveTime=0;spawnInterval=1400;inputBuffer="";combo=0;comboTimer=0;lastKillTime=0;bestCombo=0;powerCooldowns={ slow:0, shield:0, burst:0 };powerTimers={ slow:0, shield:0, burst:0 };shieldCharges=0;hud();
  gameArea.querySelectorAll(".monster,.laser,.particle,.popup").forEach(x=>x.remove());
  startScreen.classList.add("hidden");gameOverScreen.classList.add("hidden");running=true;
  inputPreview.textContent="";
@@ -293,8 +418,11 @@ function start(){
 
 function endGame(){
  running=false;cancelAnimationFrame(raf);clearTarget();inputBuffer="";inputPreview.textContent="";
+ bestScore = Math.max(bestScore, score);
+ bestCombo = Math.max(bestCombo, combo);
  syncMobileKeyboard();
  statusEl.textContent="SYSTEM OFFLINE";finalScore.textContent=score.toLocaleString();gameOverScreen.classList.remove("hidden");
+ hud();
 }
 
 document.querySelectorAll(".mode").forEach(btn=>{

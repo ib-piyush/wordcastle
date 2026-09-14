@@ -5,5 +5,8 @@
   "scripts": {
     "dev": "npx serve .",
     "start": "npx serve ."
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
   }
 }
