@@ -79,7 +79,9 @@ function syncMobileKeyboard(){
 
 mobileInput.addEventListener("input",()=>{
   if(!running)return;
-  const value=mobileInput.value.toLowerCase().replace(/[^a-z]/g,"");
+  const rawValue=mobileInput.value.toLowerCase();
+  for(const hotkey of rawValue.match(/[123]/g)||[]) activatePower({"1":"slow","2":"shield","3":"burst"}[hotkey]);
+  const value=rawValue.replace(/[^a-z]/g,"");
   if(value.length < inputBuffer.length){
     handleBackspace();
   }else if(value.length > inputBuffer.length){
@@ -217,6 +219,12 @@ function findManualTarget(buffer){
 
 document.addEventListener("keydown",e=>{
  if(!running||e.ctrlKey||e.altKey||e.metaKey)return;
+ const powerHotkeys={"1":"slow","2":"shield","3":"burst","F1":"slow","F2":"shield","F3":"burst"};
+ if(powerHotkeys[e.key]){
+   e.preventDefault();
+   activatePower(powerHotkeys[e.key]);
+   return;
+ }
  if(e.key==="Backspace"){
    handleBackspace();
    return;
@@ -386,7 +394,8 @@ function updatePowerButtons(){
     button.classList.toggle("ready", !cooldown && !active);
     button.classList.toggle("cooldown", cooldown || active);
     button.disabled = cooldown || active;
-    button.textContent = active ? `${key.toUpperCase()} ON` : cooldown ? `${key.toUpperCase()} ${powerCooldowns[key].toFixed(1)}s` : key.toUpperCase();
+    const hotkey=button.dataset.hotkey;
+    button.textContent = active ? `${hotkey} ${key.toUpperCase()} ON` : cooldown ? `${hotkey} ${powerCooldowns[key].toFixed(1)}s` : `${hotkey} ${key.toUpperCase()}`;
   });
 }
 
