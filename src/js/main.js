@@ -430,6 +430,9 @@ function updatePowerButtons(){
     button.classList.toggle("cooldown", cooldown || active);
     button.disabled = cooldown || active;
     const hotkey=button.dataset.hotkey;
+    const shortcut=`Press ${hotkey} or F${hotkey} to activate ${key}`;
+    button.title=shortcut;
+    button.setAttribute("aria-label",shortcut);
     button.textContent = active ? `${hotkey} ${key.toUpperCase()} ON` : cooldown ? `${hotkey} ${powerCooldowns[key].toFixed(1)}s` : `${hotkey} ${key.toUpperCase()}`;
   });
 }

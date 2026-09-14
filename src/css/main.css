@@ -143,6 +143,7 @@ body{
   color:#90a3b8;
   text-transform:uppercase;
 }
+.hud-controls{display:flex;align-items:center;gap:12px;min-width:0}
 
 .stats{display:flex;gap:10px;align-items:center}
 .card{
@@ -171,14 +172,24 @@ body{
 .hp{color:var(--green);text-shadow:0 0 10px rgba(124,247,163,0.7)}
 
 .powerups{
-  position:absolute;
-  left:50%;
-  top:104px;
-  transform:translateX(-50%);
   display:flex;
-  gap:8px;
-  z-index:18;
+  align-items:center;
+  gap:6px;
+  padding-left:10px;
+  border-left:2px solid var(--line);
 }
+.powerup-label{
+  color:var(--cyan);
+  font-family:"Press Start 2P",monospace;
+  font-size:7px;
+  letter-spacing:1px;
+  white-space:nowrap;
+}
+.powerup-label small{display:block;margin-top:5px;color:#8193a7;font-size:6px;letter-spacing:1.5px;text-align:center}
+.powerup-btn{position:relative}
+.powerup-btn::first-letter{color:var(--yellow)}
+.powerup-btn:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.powerup-btn:hover::after{content:attr(title);position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);width:150px;padding:6px;background:#081019;color:#dfeeff;border:2px solid var(--cyan);font:7px/1.4 "Press Start 2P",monospace;z-index:50;pointer-events:none}
 .powerup-btn{
   min-width:100px;
   padding:8px 10px;
@@ -755,7 +766,8 @@ button:hover,.game-link:hover{
   .label{font-size:6px}
   .value{font-size:8px}
   #gameArea{top:62px}
-  #powerups{top:70px;right:8px;left:auto;bottom:auto;transform:none;gap:4px;flex-direction:column;align-items:stretch}
+  .hud-controls{gap:4px}
+  #powerups{display:none}
   .powerup-btn{min-width:74px;padding:6px 5px;font-size:6px;letter-spacing:1px}
   .panel{width:min(430px,92vw);padding:16px 12px}
   .start-panel{display:block;width:min(430px,94vw);height:calc(100vh - 16px);margin:8px 0;padding:14px 12px;overflow:hidden}
